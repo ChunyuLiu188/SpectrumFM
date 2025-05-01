@@ -1,5 +1,6 @@
 # The Framework of Our Model
-[jsac.pdf](https://github.com/user-attachments/files/19989858/jsac.pdf)
+![image](https://github.com/user-attachments/assets/8c9dd355-300c-4464-bbb5-e7ed09880dd7)
+
 The SpectrumFM framework comprises three key stages. First, in the data collection and processing stage, diverse
 spectrum data from multiple sources are gathered and 
 preprocessed to ensure consistency and compatibility across datasets.
