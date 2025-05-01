@@ -28,4 +28,12 @@ to specific downstream tasks.
 ![image](https://github.com/user-attachments/assets/6e2a5e35-884d-440a-b6e9-5d6db6be00be)
 ## Anomaly Detection Task
 ![image](https://github.com/user-attachments/assets/571d68c9-db05-4d1e-8cf1-fa1d5ba3040f)
-# 
+# The Code
+The pretraining code is located in the `pretraining.py` file, while the fine-tuning code can be found in the `amc.py` file.
+# Cite Our Paper
+'''
+@article{spectrumfm,
+  title={SpectrumFM: A Foundation Model for Intelligent Spectrum Management},
+  author={Zhou, Fuhui and Liu, Chunyu and Zhang, Hao and Wu, Wei and Wu, Qihui and Ng, Derrick Wing Kwan and Quek, Tony Q S and Chae, Chan-Byoung},
+  year={2025}, % Replace with the actual publication year
+}'''
