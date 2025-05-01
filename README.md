@@ -36,4 +36,4 @@ The pretraining code is located in the `pretrain.py` file, while the fine-tuning
   title={SpectrumFM: A Foundation Model for Intelligent Spectrum Management},
   author={Zhou, Fuhui and Liu, Chunyu and Zhang, Hao and Wu, Wei and Wu, Qihui and Ng, Derrick Wing Kwan and Quek, Tony Q S and Chae, Chan-Byoung},
   year={2025}, % Replace with the actual publication year
-}```
+}
