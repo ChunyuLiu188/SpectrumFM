@@ -33,12 +33,14 @@ A checkpoint pretrained on RML2018 is available at https://pan.nuaa.edu.cn/share
 The pretraining code is located in the `pretrain.py` file, while the fine-tuning code can be found in the `amc.py` file.
 # Cite Our Paper
 ```
-@misc{zhou2025spectrumfmfoundationmodelintelligent,
-      title={SpectrumFM: A Foundation Model for Intelligent Spectrum Management}, 
-      author={Fuhui Zhou and Chunyu Liu and Hao Zhang and Wei Wu and Qihui Wu and Derrick Wing Kwan Ng and Tony Q. S. Quek and Chan-Byoung Chae},
-      year={2025},
-      eprint={2505.06256},
-      archivePrefix={arXiv},
-      primaryClass={eess.SP},
-      url={https://arxiv.org/abs/2505.06256}, 
-}
+@ARTICLE{11301740,
+  author={Zhou, Fuhui and Liu, Chunyu and Zhang, Hao and Wu, Wei and Wu, Qihui and Quek, Tony Q. S. and Chae, Chan-Byoung},
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  title={SpectrumFM: A Foundation Model for Intelligent Spectrum Management}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-1},
+  keywords={Feature extraction;Radio spectrum management;Accuracy;Wireless communication;Foundation models;Signal to noise ratio;Wireless sensor networks;Robustness;Communication system security;Training;Spectrum foundation model;automatic modulation classification;wireless technology classification;spectrum sensing;anomaly detection},
+  doi={10.1109/JSAC.2025.3644783}}
+
