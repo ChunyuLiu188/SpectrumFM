@@ -29,6 +29,7 @@ to specific downstream tasks.
 ## Anomaly Detection Task
 ![image](https://github.com/user-attachments/assets/571d68c9-db05-4d1e-8cf1-fa1d5ba3040f)
 # The Code
+A checkpoint pretrained on RML2018 is available at https://pan.nuaa.edu.cn/share/e2b1cf13f330187efbc9a918e6
 The pretraining code is located in the `pretrain.py` file, while the fine-tuning code can be found in the `amc.py` file.
 # Cite Our Paper
 ```
