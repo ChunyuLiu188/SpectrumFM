@@ -345,7 +345,7 @@ class ConformerClassifier(nn.Module):
         self.encoder = ConformerEncoder(input_dim, model_dim, num_heads, num_layers, ff_hidden_dim, max_len)
         state_dict = torch.load("Checkpoint/pretrain_model_full.pt")
         self.encoder.load_state_dict(state_dict)
-        inject_lora(self.encoder, target_modules=["query", "key", "value", "output", "fc1", "fc2"], r=8, alpha=16)
+        inject_lora(self.encoder, target_modules=["query", "key", "value", "output", "fc1", "fc2"], r=16, alpha=32)
         for name, param in self.encoder.named_parameters():
             if "lora_" not in name:
                 param.requires_grad = False
