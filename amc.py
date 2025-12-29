@@ -21,26 +21,10 @@ import seaborn as sns
 from sklearn.manifold import TSNE
 import h5py
 import deepspeed
-def parse_args():
-    # 创建ArgumentParser对象
-        parser = argparse.ArgumentParser(description="Training parameters for IQ signal processing with Transformer.")
+import pickle
+import numpy as np
+from sklearn.model_selection import train_test_split
 
-        # 添加参数
-        parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train the model (default: 100)')
-        parser.add_argument('--batch_size', type=int, default=256, help='Batch size for training (default: 128)')
-        parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for optimizer (default: 1e-4)')
-    
-        parser.add_argument('--input_dim', type=int, default=2, help='Input dimension of the IQ data (default: 2)')
-        
-        parser.add_argument('--max_seq_length', type=int, default=128, help='Maximum sequence length for the input data (default: 128)')
-        parser.add_argument('--num_workers', type=int, default=12, help='Num workers for data loader')
-        parser.add_argument('--model_name', type=str, default="Our", help='Num workers for data loader')
-        parser.add_argument('--task_name', type=str, default="wtc", help='The task name')
-        parser.add_argument('--local_rank', type=int, default=0, help='local rank passed from distributed launcher')
-        # 解析命令行参数
-        args = parser.parse_args()
-
-        return args
 def process_data():
     with open("Data/RML2016.10a_dict.pkl", "rb",) as f:
         data = pickle.load(f,encoding="latin1")
@@ -58,7 +42,7 @@ def process_data():
         total_len = len(v)
         
         # 使用 sklearn 的 train_test_split 划分数据集
-        train_indices, test_indices = train_test_split(np.arange(total_len), test_size=0.9, random_state=42)
+        train_indices, test_indices = train_test_split(np.arange(total_len), test_size=0.1, random_state=42)
         
         # 获取训练集和测试集
         train_values = v[train_indices]
@@ -85,22 +69,14 @@ def process_data():
     train_dict["value"] = iq2ap(train_dict["value"])
     # # #********************min-max-scaling********************
     train_dict["value"] = normalize(train_dict["value"])
-    # train_dict["value"][:, :, 0] = (train_dict["value"][:, :, 0] - 0.04633322) / 0.020672457
-    # train_dict["value"][:, :, 1] = (train_dict["value"][:, :, 1] - 0.4819608) / 0.28311247
-    
-    # print(train_dict["value"][:, :, 0].mean())
-    # print(train_dict["value"][:, :, 0].std())
-    # print(train_dict["value"][:, :, 1].mean())
-    # print(train_dict["value"][:, :, 1].std())
-################################0.16861732
+
 
     train_dict["label"] = np.concatenate(train_dict["label"], axis=0)
     test_dict["value"] = np.concatenate(test_dict["value"], axis=0)
     test_dict["value"] = np.transpose(test_dict["value"], (0, 2, 1))
     test_dict["value"] = iq2ap(test_dict["value"])
     test_dict["value"] = normalize(test_dict["value"])
-    # test_dict["value"][:, :, 0] = (test_dict["value"][:, :, 0] - 0.04633322) / 0.020672457
-    # test_dict["value"][:, :, 1] = (test_dict["value"][:, :, 1] - 0.4819608) / 0.28311247
+    
     test_dict["label"] = np.concatenate(test_dict["label"], axis=0)
     test_dict["snr"] = np.concatenate(test_dict["snr"], axis=0)
     return train_dict, test_dict
@@ -115,28 +91,22 @@ def process_data_wtc():
     train_dict["value"] = sample  
     train_dict["label"] = label
     with h5py.File("Data/output_split.h5", "r") as f:
-            sample = f["test_X"][:]  # 延迟加载样本
-            label = np.squeeze(f["test_Y"][:])   # 延迟加载标签
-            snr = f["test_Z"][:]
+            sample = f["test_X"][:10000]  # 延迟加载样本
+            label = np.squeeze(f["test_Y"][:10000])   # 延迟加载标签
+            snr = f["test_Z"][:10000]
     test_dict["value"] = sample  
     test_dict["label"] = label
     test_dict["snr"] = snr
     
    
     return train_dict, test_dict
-def load_h5():
-    with h5py.File("Data/wtc.h5", "r") as f:
-                sample = f["X"][:]  
-                label = np.squeeze(f["Y"][:])  
-                snr = f["Z"][:]
-    length = len(sample)
-    train_idx, test_idx = train_test_split(list(range(length)), test_size=0.1, random_state=42)
-    train_dict = {"value": sample[train_idx],
-                "label": label[train_idx]}
-    test_dict = {"value": sample[test_idx],
-                "label": label[test_idx],
-                 "snr": snr[test_idx]}
-    return train_dict, test_dict
+
+def min_max_normalize(data):
+    min_val = np.min(data)
+    max_val = np.max(data)
+    return (data - min_val) / (max_val - min_val)
+
+
 def train(model, train_dataloader, val_dataloader, args):
     optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad), lr=args.lr)
     # model_engine, optimizer, _, _ = deepspeed.initialize(args=None, model=model, optimizer=optimizer, model_parameters=model.parameters(), config_params= "deepspeed_config.json")
@@ -172,7 +142,7 @@ def train(model, train_dataloader, val_dataloader, args):
         test_loss, test_acc = [], []
         model.eval()
         with torch.no_grad():
-            for value, label, snr in tqdm(test_dataloader):
+            for value, label, _ in tqdm(test_dataloader):
                 value, label = value.to(device), label.to(device)
                 output = model(value)
                 if args.model_name == "DAE":
@@ -276,7 +246,7 @@ def test_per_snr(model, test_dataloader, args):
         results[snr] = {}
         results[snr]['accuracy'] = accuracy_score(label[snr], predict[snr])
         
-        print(f'SNR: {snr}, Accuracy: {results[snr]["accuracy"]:.4f}')
+        print(f'{snr}, {results[snr]["accuracy"]:.4f}')
         accs.append(results[snr]['accuracy'])
     with open(f'Results/{args.task_name}/snr_results.csv', 'a', newline="") as f:
         writer = csv.writer(f)
@@ -388,53 +358,72 @@ def tsne(model, test_dataloader, args):
             plt.grid(True)
             plt.savefig(f'Results/{args.task_name}/{args.model_name}_{snr}db_tsne.svg')
 
-
+# 
                    
 if __name__ == '__main__':
+    def parse_args():
+    # 创建ArgumentParser对象
+        parser = argparse.ArgumentParser(description="Training parameters for IQ signal processing with Transformer.")
+
+        # 添加参数
+        parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train the model (default: 100)')
+        parser.add_argument('--batch_size', type=int, default=256, help='Batch size for training (default: 128)')
+        parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for optimizer (default: 1e-4)')
+    
+        parser.add_argument('--input_dim', type=int, default=2, help='Input dimension of the IQ data (default: 2)')
+        
+        parser.add_argument('--max_seq_length', type=int, default=1024, help='Maximum sequence length for the input data (default: 128)')
+        parser.add_argument('--num_workers', type=int, default=12, help='Num workers for data loader')
+        parser.add_argument('--model_name', type=str, default="Our", help='Num workers for data loader')
+        parser.add_argument('--task_name', type=str, default="wtc", help='The task name')
+        parser.add_argument('--local_rank', type=int, default=0, help='local rank passed from distributed launcher')
+        # 解析命令行参数
+        args = parser.parse_args()
+
+        return args
     args = parse_args()
     device = torch.device(f"cuda:{args.local_rank}" if torch.cuda.is_available() else "cpu")
-    torch.cuda.set_device(device)
+    # device = torch.device("cpu")
     print(f"Using device: {device}")
     #################################### Prepare data #################################### 
+    # train_dict, test_dict = process_data_few_shot()
     # train_dict, test_dict = process_data()
+    # train_dict, test_dict = load_sen_amc()
     #***********************************load data from h5 ********************************
     # train_dict, test_dict = load_h5()
-    train_dict, test_dict = process_data_wtc()
+    # train_dict, test_dict = process_data_wtc()
+    train_dict, test_dict = process_data()
     train_dataset = AMCDataset(train_dict)
     test_dataset = AMCDataset(test_dict)
     val_dataloader = DataLoader(test_dataset, batch_size=args.batch_size)
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size)
     ################################ Model ###################################################
-    #model = AMC_Net(11, 128, 36).to(device)
-    #model = MSNet(2, 3).to(device)
-    #model = ResNet(2, 11).to(device)
+    # model = AMC_Net(11, 128, 36).to(device)
+    # model = MSNet(2, 11).to(device)
+    # model = ResNet(2, 11).to(device)
     # model = VGG(2, 11).to(device)
-    #model = CNN2(1, 11).to(device)
+    # model = CNN2(1, 11).to(device)
     # model = DAE((128, 2), 11).to(device)
     # model = CGDNN(1, 11).to(device)
-    #model = MCNet(11).to(device)
-    #model = Transformer().to(device)
+    # model = MCNet(3).to(device)
+    # model = Transformer().to(device)
     #model = GRU2(2, 128, 11).to(device)
    
     ################################ Our Model ############################################
-    model = ConformerClassifier(2, 256, 4, 16, 512, 3, 129).to(device)# 64/128 up to 7 layers
-    # model.encoder.load_state_dict(torch.load("Checkpoint/pretrain_model_full.pt"))
-    # for layer in model.encoder.layers[:-6]:  # 假设 model.encoder.layers 是 ModuleList
-    #     for param in layer.parameters():
-    #         param.requires_grad = False
-    ################################################################################
-    # model = LLMClassifier(2, 256, 4, 16, 512, 3, 129).to(device)
+    model = ConformerClassifier(2, 256, 4, 16, 512, 11, 1024).to(device)# 64/128 up to 7 layers
+    
+   
     
     
-    
+
     ####################################################
     
-    summary(model, input_size=(256, 128, 2))
+    # summary(model, input_size=(256, 128, 2))
     train(model, train_dataloader, test_dataloader, args)
     # test(model, test_dataloader, args)
     test_per_snr(model, test_dataloader, args)
-    # confusion(model, test_dataloader, args)
+    confusion(model, test_dataloader, args)
     # tsne(model, test_dataloader, args)
 
 
