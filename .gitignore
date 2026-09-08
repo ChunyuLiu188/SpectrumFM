@@ -1,0 +1,28 @@
+# local data and caches
+data/
+extract/
+cache/
+ckpts/
+runs/
+logs/
+tb_logs/
+*.pt
+*.pkl
+*.dat
+*.mat
+*.npz
+*.npy
+*.h5
+*.hdf5
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/

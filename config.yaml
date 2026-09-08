@@ -1,0 +1,48 @@
+data:
+  root: ./data
+  cache_dir: ./cache/pretrain
+  seq_len: 128
+  mask_ratio: 0.3
+  independent_iq_mask: true   # I / Q masked independently
+  val_ratio: 0.01
+  # DataLoader workers per GPU. Data is read as contiguous memmap blocks.
+  num_workers: 4
+  prepare_workers: 64
+  extract_dir: ./extract
+  # Skip these filenames during prepare (downstream fine-tune sets can be added back)
+  skip_names: []
+  # Skip archives / labels / docs still being downloaded
+  skip_suffixes: [".zip", ".7z", ".csv", ".txt", ".wav", ".docx", ".md", ".json", ".png"]
+
+model:
+  d_model: 512
+  n_layers: 16
+  n_heads: 8
+  d_ff: 2048
+  n_memory: 16          # RMT-style memory tokens (one set at each end)
+  seq_len: 128
+  dropout: 0.0          # off during pretrain; fine-tune sets ~0.1
+  drop_path: 0.0
+  # On 32 GB GPUs, checkpointing was slower than a smaller micro-batch.
+  grad_checkpoint: false
+  compile: true         # torch.compile
+
+train:
+  # Example: 4x 32 GB GPUs, micro 512, accum 2 -> global batch 4096
+  batch_size: 512          # per-GPU micro batch
+  grad_accum: 2            # global batch = batch_size * grad_accum * n_gpus
+  epochs: 10
+  lr: 4.0e-4              # peak after warmup, then cosine decay to min_lr
+  min_lr: 1.0e-6
+  weight_decay: 0.01
+  warmup_steps: 2000
+  grad_clip: 1.0
+  mixed_precision: bf16
+  zero_stage: 2
+  seed: 42
+  log_every: 50
+  save_every: 2000
+  save_dir: ./ckpts
+  tb_dir: ./tb_logs
+  resume: null
+  ds_config: ./ds_config.json
