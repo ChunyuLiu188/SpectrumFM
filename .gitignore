@@ -1,12 +1,10 @@
-# local data and caches
+# local data and caches (released weights under ckpts/ and runs/finetune/ are tracked)
 data/
 extract/
 cache/
-ckpts/
-runs/
 logs/
 tb_logs/
-*.pt
+runs/baselines/
 *.pkl
 *.dat
 *.mat
@@ -14,6 +12,9 @@ tb_logs/
 *.npy
 *.h5
 *.hdf5
+*.pt
+!ckpts/best.pt
+!runs/finetune/**/best.pt
 
 # python
 __pycache__/
